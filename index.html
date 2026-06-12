@@ -6,68 +6,42 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 *{margin:0;padding:0;box-sizing:border-box;}
-:root{
-  --bg:#07091a;
-  --bg2:#0d1128;
-  --accent:#378ADD;
-  --accent2:#1D9E75;
-  --text:#e8f0fe;
-  --muted:#7a9cc0;
-  --border:rgba(55,138,221,0.18);
-}
+:root{--bg:#07091a;--bg2:#0d1128;--accent:#378ADD;--accent2:#1D9E75;--text:#e8f0fe;--muted:#7a9cc0;--border:rgba(55,138,221,0.18);}
 html,body{width:100%;background:var(--bg);font-family:'Inter',sans-serif;overflow-x:hidden;}
-
-/* ── HERO ── */
 #hero{position:relative;width:100%;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;}
 canvas#bg{position:absolute;inset:0;width:100%;height:100%;}
 .hero-inner{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;text-align:center;padding:3rem 1.5rem 2rem;}
-
-/* profile photo */
 .avatar-wrap{position:relative;margin-bottom:1.8rem;}
 .avatar-ring{position:absolute;inset:-6px;border-radius:50%;border:2px solid transparent;background:linear-gradient(135deg,#378ADD,#1D9E75) border-box;-webkit-mask:linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0);-webkit-mask-composite:destination-out;mask-composite:exclude;animation:spin 8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .avatar{width:120px;height:120px;border-radius:50%;object-fit:cover;border:3px solid var(--bg2);display:block;}
 .avatar-fallback{width:120px;height:120px;border-radius:50%;background:linear-gradient(135deg,#185FA5,#0F6E56);display:flex;align-items:center;justify-content:center;font-size:2.4rem;font-weight:700;color:#fff;letter-spacing:-1px;}
-
 .status-dot{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--accent2);background:rgba(29,158,117,0.12);border:1px solid rgba(29,158,117,0.3);padding:4px 12px;border-radius:20px;margin-bottom:1.2rem;}
 .dot{width:7px;height:7px;border-radius:50%;background:var(--accent2);animation:pulse 2s ease-in-out infinite;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
-
 h1{font-size:clamp(2.2rem,5vw,3.6rem);font-weight:700;color:#fff;letter-spacing:-0.03em;line-height:1.1;margin-bottom:0.5rem;}
 h1 span{background:linear-gradient(90deg,#378ADD,#1D9E75);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
 .subtitle{font-size:clamp(0.85rem,1.8vw,1rem);color:var(--muted);font-weight:300;margin-bottom:0.3rem;}
 .org{font-size:0.82rem;color:rgba(120,160,200,0.7);margin-bottom:1.4rem;}
-
-/* animated typewriter */
 .typewriter-wrap{font-size:0.9rem;color:var(--accent);min-height:1.4em;margin-bottom:1.6rem;font-weight:400;}
 #tw-cursor{display:inline-block;width:2px;height:1em;background:var(--accent);vertical-align:text-bottom;margin-left:2px;animation:blink 1s step-end infinite;}
 @keyframes blink{50%{opacity:0;}}
-
-/* stat pills */
 .stats{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:1.8rem;}
 .stat{background:rgba(55,138,221,0.08);border:1px solid var(--border);border-radius:12px;padding:8px 16px;text-align:center;}
 .stat-n{font-size:1.3rem;font-weight:700;color:#fff;}
 .stat-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;}
-
-/* tags */
 .tags{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-bottom:2rem;}
 .tag{font-size:11px;padding:4px 11px;border-radius:20px;color:var(--muted);border:1px solid rgba(100,150,200,0.2);background:rgba(55,138,221,0.05);}
-
-/* nav buttons */
 .nav-btns{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-bottom:1.4rem;}
 .btn{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;padding:9px 20px;border-radius:22px;text-decoration:none;transition:all 0.2s;cursor:pointer;border:none;}
 .btn-p{background:var(--accent);color:#fff;}
 .btn-p:hover{background:#185FA5;transform:translateY(-1px);}
 .btn-g{background:transparent;color:var(--muted);border:1px solid var(--border);}
 .btn-g:hover{border-color:var(--accent);color:#64b8ff;transform:translateY(-1px);}
-
-/* social icons */
 .socials{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
 .soc{width:34px;height:34px;border-radius:50%;background:rgba(55,138,221,0.1);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);text-decoration:none;font-size:13px;font-weight:600;transition:all 0.2s;}
 .soc:hover{background:var(--accent);color:#fff;border-color:var(--accent);}
 .soc svg{width:15px;height:15px;fill:currentColor;}
-
-/* ── TIMELINE STRIP ── */
 #timeline{background:var(--bg2);padding:2.5rem 1.5rem;border-top:1px solid var(--border);}
 .tl-title{text-align:center;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.15em;color:var(--muted);margin-bottom:1.6rem;}
 .tl-items{display:flex;flex-wrap:wrap;justify-content:center;gap:0;}
@@ -75,15 +49,11 @@ h1 span{background:linear-gradient(90deg,#378ADD,#1D9E75);-webkit-background-cli
 .tl-item:not(:last-child)::after{content:'';position:absolute;right:0;top:18px;width:1px;height:30px;background:var(--border);}
 .tl-yr{font-size:11px;color:var(--accent);font-weight:600;margin-bottom:3px;}
 .tl-txt{font-size:11px;color:var(--muted);max-width:110px;line-height:1.4;}
-
-/* ── AWARDS STRIP ── */
 #awards{padding:2rem 1.5rem;background:var(--bg);}
 .sec-title{text-align:center;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.15em;color:var(--muted);margin-bottom:1.2rem;}
 .award-grid{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;}
 .award{background:rgba(29,158,117,0.07);border:1px solid rgba(29,158,117,0.2);border-radius:10px;padding:8px 14px;font-size:11px;color:rgba(160,210,190,0.85);max-width:220px;text-align:center;line-height:1.4;}
 .award strong{display:block;color:#7fe8c0;font-size:10px;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px;}
-
-/* ── SCHOLAR SECTION ── */
 #scholar{background:var(--bg2);padding:2.5rem 1.5rem;border-top:1px solid var(--border);}
 .scholar-grid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-bottom:2rem;}
 .scholar-card{background:rgba(55,138,221,0.07);border:1px solid var(--border);border-radius:14px;padding:1.2rem 2rem;text-align:center;min-width:140px;}
@@ -91,16 +61,15 @@ h1 span{background:linear-gradient(90deg,#378ADD,#1D9E75);-webkit-background-cli
 .scholar-sub{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-top:4px;}
 .scholar-since{font-size:11px;color:var(--accent);margin-top:2px;}
 .chart-wrap{max-width:600px;margin:0 auto;}
-.chart-bars{display:flex;align-items:flex-end;gap:6px;height:100px;padding:0 4px;}
+.chart-bars{display:flex;align-items:flex-end;gap:6px;height:120px;padding:0 4px;}
 .bar-col{display:flex;flex-direction:column;align-items:center;flex:1;gap:4px;}
 .bar{width:100%;border-radius:3px 3px 0 0;background:var(--accent);opacity:0.7;transition:opacity 0.2s;min-height:2px;}
 .bar:hover{opacity:1;}
+.bar-val{font-size:9px;color:var(--accent);text-align:center;min-height:12px;}
 .bar-yr{font-size:9px;color:var(--muted);text-align:center;}
 .chart-title{text-align:center;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:1rem;}
 .scholar-link{display:block;text-align:center;margin-top:1.2rem;font-size:11px;color:var(--accent);text-decoration:none;opacity:0.7;}
 .scholar-link:hover{opacity:1;}
-  
-/* scroll hint */
 .scroll-hint{position:absolute;bottom:1.5rem;left:50%;transform:translateX(-50%);z-index:2;display:flex;flex-direction:column;align-items:center;gap:4px;opacity:0.4;}
 .scroll-hint span{font-size:10px;color:var(--muted);letter-spacing:0.1em;}
 .scroll-arrow{width:20px;height:20px;border-right:1px solid var(--muted);border-bottom:1px solid var(--muted);transform:rotate(45deg);animation:bounce 1.5s ease-in-out infinite;}
@@ -111,34 +80,26 @@ h1 span{background:linear-gradient(90deg,#378ADD,#1D9E75);-webkit-background-cli
 
 <section id="hero">
   <canvas id="bg"></canvas>
-
   <div class="hero-inner">
     <div class="status-dot"><span class="dot"></span>Available for collaboration</div>
-
     <div class="avatar-wrap">
       <div class="avatar-ring"></div>
-      <img class="avatar" 
+      <img class="avatar"
         src="https://raw.githubusercontent.com/emadroshandel/emadroshandel.github.io/main/profile.JPG"
         alt="Emad Roshandel"
         onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
       <div class="avatar-fallback" style="display:none;">ER</div>
     </div>
-
     <h1>Emad <span>Roshandel</span></h1>
     <p class="subtitle">Ph.D. in Electrical Engineering</p>
     <p class="org">R&D Lead · Infusion Innovations Pty Ltd</p>
-
-    <div class="typewriter-wrap">
-      <span id="tw"></span><span id="tw-cursor"></span>
-    </div>
-
+    <div class="typewriter-wrap"><span id="tw"></span><span id="tw-cursor"></span></div>
     <div class="stats">
       <div class="stat"><div class="stat-n">55+</div><div class="stat-l">Publications</div></div>
       <div class="stat"><div class="stat-n">15+</div><div class="stat-l">Years Exp.</div></div>
       <div class="stat"><div class="stat-n">10+</div><div class="stat-l">Awards</div></div>
       <div class="stat"><div class="stat-n">2</div><div class="stat-l">Countries</div></div>
     </div>
-
     <div class="tags">
       <span class="tag">Power Electronics</span>
       <span class="tag">Switching Power Supplies</span>
@@ -149,7 +110,6 @@ h1 span{background:linear-gradient(90deg,#378ADD,#1D9E75);-webkit-background-cli
       <span class="tag">Antenna Design</span>
       <span class="tag">Medical Devices</span>
     </div>
-
     <div class="nav-btns">
       <a class="btn btn-p" href="https://sites.google.com/site/emadroshandel/home">Home</a>
       <a class="btn btn-g" href="https://sites.google.com/site/emadroshandel/publications">Publications</a>
@@ -157,38 +117,30 @@ h1 span{background:linear-gradient(90deg,#378ADD,#1D9E75);-webkit-background-cli
       <a class="btn btn-g" href="https://sites.google.com/site/emadroshandel/education">Education</a>
       <a class="btn btn-g" href="https://sites.google.com/site/emadroshandel/honors-awards">Awards</a>
     </div>
-
     <div class="socials">
-      <!-- LinkedIn -->
       <a class="soc" href="https://www.linkedin.com/in/emad-roshandel-76875a187/" title="LinkedIn">
         <svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
       </a>
-      <!-- Google Scholar -->
       <a class="soc" href="https://scholar.google.com/citations?user=d1Wqu9wAAAAJ" title="Google Scholar">
         <svg viewBox="0 0 24 24"><path d="M12 24a7 7 0 110-14 7 7 0 010 14zm0-24L0 9.5l4.838.95v5.55c0 .468 1.032.85 2.3.85.617 0 1.174-.08 1.584-.21L12 24l3.278-7.36c.41.13.967.21 1.584.21 1.268 0 2.3-.382 2.3-.85v-5.55L24 9.5 12 0z"/></svg>
       </a>
-      <!-- ResearchGate -->
       <a class="soc" href="https://www.researchgate.net/profile/Emad-Roshandel" title="ResearchGate">
         <svg viewBox="0 0 24 24"><path d="M19.586 0c-.818 0-1.508.19-2.073.565-.563.377-.97.936-1.213 1.68a12.193 12.193 0 00-.32 2.973v1.234c-.52-.08-1.063-.12-1.627-.12-2.61 0-4.675.747-6.2 2.24-1.524 1.494-2.286 3.485-2.286 5.975 0 2.518.742 4.516 2.225 5.995 1.484 1.478 3.531 2.218 6.142 2.218 1.306 0 2.518-.197 3.635-.593V24h3.332V5.86h-3.332v.594c-.44-.24-.938-.358-1.493-.358-1.086 0-1.935.39-2.547 1.168-.612.778-.918 1.87-.918 3.274 0 1.39.303 2.483.91 3.277.605.794 1.455 1.19 2.549 1.19.57 0 1.07-.118 1.499-.353v6.27c-.91.302-1.872.453-2.884.453-1.785 0-3.168-.52-4.15-1.558-.982-1.038-1.473-2.5-1.473-4.384 0-1.878.503-3.344 1.508-4.396 1.005-1.052 2.404-1.578 4.196-1.578.576 0 1.132.056 1.668.168V5.86c-.538-.072-1.08-.108-1.626-.108-3.21 0-5.762.9-7.655 2.7C1.45 10.252.5 12.684.5 15.747c0 3.063.944 5.49 2.834 7.28C5.224 24.817 7.79 25.712 11 25.712c1.09 0 2.115-.104 3.076-.313v-3.014c-.973.286-1.985.43-3.036.43-2.213 0-3.937-.62-5.172-1.858C4.633 19.717 4 18.026 4 15.893c0-2.133.633-3.82 1.9-5.062 1.267-1.243 3.01-1.864 5.228-1.864.546 0 1.065.046 1.557.137v-.93c0-1.118.163-1.97.489-2.553.326-.584.85-.876 1.573-.876.406 0 .754.1 1.044.3V0h3.795z"/></svg>
       </a>
-      <!-- GitHub -->
       <a class="soc" href="https://github.com/emadroshandel" title="GitHub">
         <svg viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
       </a>
-      <!-- Univ of Adelaide -->
       <a class="soc" href="https://www.adelaide.edu.au/directory/emad.roshandel" title="University of Adelaide">
         <svg viewBox="0 0 24 24"><path d="M12 2L2 7v2h20V7L12 2zm-7 5l7-3.5L19 7H5zm-3 2h20v2H2V9zm2 3h2v7H4v-7zm4 0h2v7H8v-7zm4 0h2v7h-2v-7zm4 0h2v7h-2v-7zM2 20h20v2H2v-2z"/></svg>
       </a>
     </div>
   </div>
-
   <div class="scroll-hint">
     <span>Scroll</span>
     <div class="scroll-arrow"></div>
   </div>
 </section>
 
-<!-- CAREER TIMELINE -->
 <section id="timeline">
   <div class="tl-title">Career journey</div>
   <div class="tl-items">
@@ -200,7 +152,6 @@ h1 span{background:linear-gradient(90deg,#378ADD,#1D9E75);-webkit-background-cli
   </div>
 </section>
 
-<!-- AWARDS -->
 <section id="awards">
   <div class="sec-title">Honours &amp; Awards</div>
   <div class="award-grid">
@@ -211,11 +162,10 @@ h1 span{background:linear-gradient(90deg,#378ADD,#1D9E75);-webkit-background-cli
     <div class="award"><strong>2022</strong>Top-Up Scholarship — Flinders University</div>
     <div class="award"><strong>2021</strong>Innovation Connections Grant — MyModular Pty Ltd</div>
     <div class="award"><strong>2020</strong>ARC Discovery Grant Scholarship</div>
-    <div class="award"><strong>2009 & 2013</strong>Top 1% — Iran National Entrance Exam (BSc &amp; MSc)</div>
+    <div class="award"><strong>2009 &amp; 2013</strong>Top 1% — Iran National Entrance Exam (BSc &amp; MSc)</div>
   </div>
 </section>
 
-<!-- SCHOLAR STATS -->
 <section id="scholar">
   <div class="sec-title">Google Scholar — Citation metrics</div>
   <div class="scholar-grid">
@@ -239,32 +189,18 @@ h1 span{background:linear-gradient(90deg,#378ADD,#1D9E75);-webkit-background-cli
     <div class="chart-title">Citations per year</div>
     <div class="chart-bars" id="sc-chart"></div>
   </div>
-  <a class="scholar-link" href="https://scholar.google.com/citations?user=d1Wqu9wAAAAJ" target="_blank">
-    View full profile on Google Scholar ↗
-  </a>
+  <a class="scholar-link" href="https://scholar.google.com/citations?user=d1Wqu9wAAAAJ" target="_blank">View full profile on Google Scholar ↗</a>
 </section>
-  
+
 <script>
-/* ── particle canvas ── */
 (function(){
   const c=document.getElementById('bg'),ctx=c.getContext('2d');
   let W,H,pts=[];
-  function resize(){
-    W=c.width=c.offsetWidth;
-    H=c.height=c.offsetHeight||window.innerHeight;
-  }
-  function mkPts(){
-    pts=Array.from({length:80},()=>({
-      x:Math.random()*W,y:Math.random()*H,
-      vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,
-      r:Math.random()*1.5+.4,a:Math.random()*.5+.15
-    }));
-  }
+  function resize(){W=c.width=c.offsetWidth;H=c.height=c.offsetHeight||window.innerHeight;}
+  function mkPts(){pts=Array.from({length:80},()=>({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,r:Math.random()*1.5+.4,a:Math.random()*.5+.15}));}
   function draw(){
     ctx.clearRect(0,0,W,H);
-    /* subtle grid */
-    ctx.strokeStyle='rgba(55,138,221,0.04)';
-    ctx.lineWidth=.5;
+    ctx.strokeStyle='rgba(55,138,221,0.04)';ctx.lineWidth=.5;
     for(let x=0;x<W;x+=60){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
     for(let y=0;y<H;y+=60){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
     for(let i=0;i<pts.length;i++){
@@ -276,42 +212,60 @@ h1 span{background:linear-gradient(90deg,#378ADD,#1D9E75);-webkit-background-cli
       ctx.fillStyle=`rgba(100,184,255,${p.a})`;ctx.fill();
       for(let j=i+1;j<pts.length;j++){
         const q=pts[j],dx=p.x-q.x,dy=p.y-q.y,d=Math.sqrt(dx*dx+dy*dy);
-        if(d<130){
-          ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);
-          ctx.strokeStyle=`rgba(55,138,221,${.12*(1-d/130)})`;ctx.lineWidth=.5;ctx.stroke();
-        }
+        if(d<130){ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.strokeStyle=`rgba(55,138,221,${.12*(1-d/130)})`;ctx.lineWidth=.5;ctx.stroke();}
       }
     }
     requestAnimationFrame(draw);
   }
-  window.addEventListener('resize',()=>{resize();});
+  window.addEventListener('resize',resize);
   resize();mkPts();draw();
 })();
 
-/* ── typewriter ── */
 (function(){
-  const lines=[
-    'Power Electronics Engineer',
-    'Ph.D.',
-    'R&D Lead at Infusion Innovations',
-    '50+ Journals & Conference Papers',
-    'Electric Machine Designer',
-    'Medical Device Designer'
-  ];
+  const lines=['Power Electronics Engineer','Ph.D. — Flinders University','R&D Lead at Infusion Innovations','533 Citations · h-index 12','Electric Machine Designer','Medical Device Innovator'];
   let li=0,ci=0,del=false;
   const el=document.getElementById('tw');
   function tick(){
     const txt=lines[li];
-    if(!del){
-      el.textContent=txt.slice(0,++ci);
-      if(ci===txt.length){del=true;setTimeout(tick,2000);return;}
-    } else {
-      el.textContent=txt.slice(0,--ci);
-      if(ci===0){del=false;li=(li+1)%lines.length;}
-    }
+    if(!del){el.textContent=txt.slice(0,++ci);if(ci===txt.length){del=true;setTimeout(tick,2000);return;}}
+    else{el.textContent=txt.slice(0,--ci);if(ci===0){del=false;li=(li+1)%lines.length;}}
     setTimeout(tick,del?40:70);
   }
   tick();
+})();
+
+(async function(){
+  const fallback={
+    citations:533, h_index:12, i10_index:13,
+    citations_since:476, h_index_since:11, i10_index_since:11,
+    yearly:{2019:28,2020:28,2021:62,2022:68,2023:88,2024:125,2025:120,2026:50}
+  };
+  let d=fallback;
+  try{
+    const r=await fetch('scholar.json');
+    if(r.ok){const j=await r.json();if(j&&j.citations)d=j;}
+  }catch(e){}
+
+  function countUp(el,target){
+    let n=0,step=Math.ceil(target/50);
+    const t=setInterval(()=>{n=Math.min(n+step,target);el.textContent=n;if(n>=target)clearInterval(t);},25);
+  }
+
+  countUp(document.getElementById('sc-cit'), d.citations||533);
+  countUp(document.getElementById('sc-h'),   d.h_index||12);
+  countUp(document.getElementById('sc-i'),   d.i10_index||13);
+  document.getElementById('sc-cit2').textContent=(d.citations_since||476)+' since 2021';
+  document.getElementById('sc-h2').textContent=(d.h_index_since||11)+' since 2021';
+  document.getElementById('sc-i2').textContent=(d.i10_index_since||11)+' since 2021';
+
+  const yearly=d.yearly||{2019:28,2020:28,2021:62,2022:68,2023:88,2024:125,2025:120,2026:50};
+  const max=Math.max(...Object.values(yearly));
+  const chart=document.getElementById('sc-chart');
+  chart.innerHTML='';
+  Object.entries(yearly).forEach(([yr,val])=>{
+    const h=Math.round((val/max)*100);
+    chart.innerHTML+=`<div class="bar-col"><div class="bar-val">${val}</div><div class="bar" style="height:${h}px" title="${yr}: ${val}"></div><div class="bar-yr">${yr}</div></div>`;
+  });
 })();
 </script>
 </body>
