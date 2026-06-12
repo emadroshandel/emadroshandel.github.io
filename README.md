@@ -1,16 +1,16 @@
 # Emad Roshandel — Personal Portfolio Website
 
-A fully animated, AI-powered personal academic portfolio hosted on GitHub Pages and enhanced via Netlify Functions. This README documents the complete build process, architecture, and code structure for reference.
+A fully animated, AI-powered personal academic portfolio hosted on GitHub Pages with a Netlify serverless backend. This README documents the complete build process, architecture, code structure, and all lessons learned during development.
 
 ---
 
 ## 🌐 Live Sites
 
-| Platform | URL |
-|---|---|
-| GitHub Pages | https://emadroshandel.github.io |
-| Netlify (AI proxy) | https://bright-donut-72d55d.netlify.app |
-| Google Site (content) | https://sites.google.com/site/emadroshandel |
+| Platform | URL | Purpose |
+|---|---|---|
+| GitHub Pages | https://emadroshandel.github.io | Main public site |
+| Netlify | https://bright-donut-72d55d.netlify.app | AI proxy backend |
+| Google Site | https://sites.google.com/site/emadroshandel | Content pages |
 
 ---
 
@@ -48,7 +48,7 @@ GitHub Pages (index.html)
   └── AI Chat Widget
         │
         ▼
-      Netlify Function (/.netlify/functions/claude)
+      Netlify Function (https://bright-donut-72d55d.netlify.app/.netlify/functions/claude)
         │
         ▼
       Google Gemini API (gemini-2.5-flash, free tier)
@@ -112,7 +112,15 @@ const lines = [
 #### AI chat sendMsg function:
 ```javascript
 async function sendMsg() {
-  // Sends message history + system prompt to Netlify proxy
+  // Sends message history + system prompt to Netlify absolute URL
+  // IMPORTANT: must use absolute URL, not relative path
+  // Relative path (/.netlify/functions/claude) only works when
+  // the page is hosted ON Netlify — not on GitHub Pages
+  const res = await fetch('https://bright-donut-72d55d.netlify.app/.netlify/functions/claude', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages: history, system: PROFILE_CONTEXT })
+  });
   // Displays typing indicator while waiting
   // Streams reply character by character (12ms/char typewriter effect)
   // Maintains last 10 messages of history for context
@@ -123,7 +131,7 @@ async function sendMsg() {
 ```
 https://raw.githubusercontent.com/emadroshandel/emadroshandel.github.io/main/profile.JPG
 ```
-> **Note:** Always use `raw.githubusercontent.com` for direct image URLs from GitHub repos, not the standard `github.com/blob/` viewer URL.
+> ⚠️ **Important:** Always use `raw.githubusercontent.com` for direct image URLs. The standard `github.com/blob/` URL is a viewer page, not a direct image link, and will not render in HTML.
 
 ---
 
@@ -133,37 +141,49 @@ A Netlify serverless function acting as a secure proxy between the frontend and 
 
 ```javascript
 exports.handler = async function(event) {
-  // Only accepts POST requests
-  // CORS restricted to allowed origins only
-  // Reads GEMINI_API_KEY from Netlify environment variables
-  // Converts chat history to Gemini message format
-  // Calls gemini-2.5-flash model (free tier)
-  // Returns { reply: "..." } JSON response
+
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Content-Type': 'application/json'
+  };
+
+  // CRITICAL: Handle preflight OPTIONS request
+  // Browsers always send OPTIONS before POST when calling cross-origin APIs
+  // Without this, the browser blocks the request before it even reaches the API
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 200, headers, body: '' };
+  }
+
+  if (event.httpMethod !== 'POST') {
+    return { statusCode: 405, headers, body: 'Method Not Allowed' };
+  }
+
+  // Convert chat history to Gemini format
+  // Gemini uses 'model' instead of 'assistant'
+  // Gemini uses parts:[{text}] instead of plain content string
+  const geminiMessages = messages.map(m => ({
+    role: m.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: m.content }]
+  }));
+
+  // Call Gemini API with API key from environment variable
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+    { ... }
+  );
 };
 ```
 
-**Allowed origins:**
-```javascript
-const allowedOrigins = [
-  'https://emadroshandel.github.io',
-  'https://bright-donut-72d55d.netlify.app'
-];
-```
+> ⚠️ **Critical CORS lesson:** The `OPTIONS` preflight handler is mandatory for any cross-origin function call. Without it, the browser sends a preflight check that returns `405 Method Not Allowed`, which kills the request entirely and shows a CORS error — even if `Access-Control-Allow-Origin: *` is set.
 
-**Gemini API endpoint used:**
-```
-https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
-```
+**Gemini model used:** `gemini-2.5-flash` (free tier)
 
-**Message format conversion** (Anthropic → Gemini):
-```javascript
-// Gemini uses 'model' instead of 'assistant' for role
-// Gemini uses parts:[{text}] instead of content string
-const geminiMessages = messages.map(m => ({
-  role: m.role === 'assistant' ? 'model' : 'user',
-  parts: [{ text: m.content }]
-}));
-```
+> ⚠️ **Model name lessons learned:**
+> - `gemini-2.0-flash` → quota limit 0 in some regions
+> - `gemini-1.5-flash` → returns 404 (deprecated/moved)
+> - `gemini-2.5-flash` → ✅ works on free tier as of June 2026
 
 ---
 
@@ -176,43 +196,51 @@ Tells Netlify where to find the serverless functions:
   functions = "netlify/functions"
 ```
 
+> Without this file, Netlify may not detect the functions folder automatically.
+
 ---
 
 ### 4. `scholar.py`
 
-Python script run by GitHub Actions to scrape Google Scholar and update `scholar.json`:
+Python script run by GitHub Actions to scrape Google Scholar and update `scholar.json`. Uses two methods with automatic fallback:
 
+**Method 1 — scholarly with free proxies:**
 ```python
-from scholarly import scholarly
-import json
-
+from scholarly import scholarly, ProxyGenerator
+pg = ProxyGenerator()
+pg.FreeProxies()
+scholarly.use_proxy(pg)
 author = scholarly.search_author_id('d1Wqu9wAAAAJ')
-author = scholarly.fill(author, sections=['basics', 'indices'])
-
-data = {
-    "citations": author['citedby'],
-    "h_index": author['hindex'],
-    "i10_index": author['i10index'],
-    "citations_since": author['citedby5y'],
-    "h_index_since": author['hindex5y'],
-    "i10_index_since": author['i10index5y'],
-}
-
-with open('scholar.json', 'w') as f:
-    json.dump(data, f)
+author = scholarly.fill(author, sections=['basics', 'indices', 'counts'])
 ```
+
+**Method 2 — direct scrape fallback:**
+```python
+# Randomised User-Agent headers to avoid bot detection
+# Parses citation stats and yearly bar chart from HTML
+# Polite random delay (2-5 seconds) before request
+```
+
+**Graceful failure:**
+```python
+# If both methods fail, exits with code 0
+# This keeps the workflow green and preserves existing scholar.json
+# Never overwrites good data with empty/failed data
+```
+
+> ⚠️ **scholarly lesson:** Google actively blocks automated requests. Free proxies are required. Even with proxies, the workflow may occasionally fail — the graceful exit with code 0 prevents false alarm failure emails.
 
 ---
 
 ### 5. `.github/workflows/update_scholar.yml`
 
-GitHub Actions workflow that runs `scholar.py` every day at 6am UTC and commits the updated `scholar.json` back to the repo:
+GitHub Actions workflow that runs `scholar.py` every day at 6am UTC:
 
 ```yaml
 name: Update Scholar Stats
 on:
   schedule:
-    - cron: '0 6 * * *'   # runs daily at 6am UTC
+    - cron: '0 6 * * *'
   workflow_dispatch:        # can also be triggered manually
 
 jobs:
@@ -223,8 +251,11 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: '3.x'
-      - run: pip install scholarly
-      - run: python scholar.py
+      - name: Install dependencies
+        run: pip install scholarly requests fp
+      - name: Run scholar script
+        run: python scholar.py
+        timeout-minutes: 10
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Auto-update scholar stats"
@@ -239,56 +270,85 @@ jobs:
 
 ## ⚙️ Environment Variables
 
-### Netlify (set in Project configuration → Environment variables)
+### Netlify (Project configuration → Environment variables)
 
 | Key | Value | Notes |
 |---|---|---|
-| `GEMINI_API_KEY` | `sk-...` | Google Gemini API key, marked as secret |
+| `GEMINI_API_KEY` | `AIza...` | Google Gemini API key, marked as secret |
 
-### GitHub Actions
-No secrets needed — `scholarly` scrapes public Google Scholar data.
+> ⚠️ **Lesson learned:** When adding the variable, tick **"Contains secret values"** and use **"Same value for all deploy contexts"** — do not use "Different value for each deploy context" as that creates separate values per environment which is confusing and error-prone.
 
 ---
 
 ## 🚀 Deployment
 
 ### GitHub Pages
-- Repo must be **public**
+- Repo must be **public** (private repos require paid GitHub plan for Pages)
 - Go to Settings → Pages → Branch: `main`, folder: `/root`
 - Site auto-deploys on every commit to `main`
-- Profile image served at: `https://raw.githubusercontent.com/emadroshandel/emadroshandel.github.io/main/profile.JPG`
+- Updates typically live within **1–3 minutes**
+- Hard refresh to see changes: `Ctrl+Shift+R` (Windows) / `Cmd+Shift+R` (Mac)
 
 ### Netlify
-- Connected to the same GitHub repo
+- Connected to the same GitHub repo via GitHub integration
 - Auto-deploys on every commit to `main`
 - Serverless functions deployed automatically from `netlify/functions/`
-- Free plan: 300 build credits/month (mostly consumed by deploys, not function calls)
+- Free plan: **300 build credits/month**
+- Most credits consumed by code deploys — not by function calls
+- Initial setup phase uses most credits; stable site uses very few
 - AI function calls cost negligible credits (~0.001 per call)
+
+> ⚠️ **Deploy conservation tip:** Before committing, batch all changes into one commit rather than committing file by file. Each commit triggers one Netlify deploy.
 
 ---
 
 ## 🤖 AI Research Assistant
 
-The AI chat widget is powered by **Google Gemini 2.5 Flash** (free tier: 1,500 requests/day).
+Powered by **Google Gemini 2.5 Flash** (free tier: 1,500 requests/day, no credit card).
 
 **System prompt context includes:**
 - PhD credentials and affiliations
-- Full career history
-- Research specialisations
-- Key projects (axial flux motor, IPMSM, MFL device, etc.)
+- Full career history (Shiraz → Isfahan → Eram Sanat → Flinders → Infusion Innovations)
+- Research specialisations and tools
+- Key projects (axial flux motor, IPMSM, MFL device, pipe inspection app, etc.)
 - Publication count and citation metrics
 - All awards and honours
-- Teaching experience
+- Teaching experience at Flinders University
 
-**Suggestion buttons** provide quick-start prompts for visitors.
+**Response length:** controlled by two settings:
+```javascript
+// In claude.js:
+generationConfig: { maxOutputTokens: 300 }  // increase for longer answers
 
-**Conversation history** — last 10 messages retained for context continuity.
+// In index.html PROFILE_CONTEXT:
+"Keep answers under 120 words."  // change to 250 for longer answers
+```
+
+**Conversation history:** last 10 messages retained for context continuity.
+
+---
+
+## 💡 AI API Journey — Lessons Learned
+
+We tried several AI APIs before finding a working free solution:
+
+| API | Result | Reason |
+|---|---|---|
+| Anthropic Claude | ❌ | No free tier — requires billing |
+| DeepSeek | ❌ | "Insufficient Balance" — free credit exhausted immediately |
+| Gemini 2.0 Flash | ❌ | Quota limit 0 in region |
+| Gemini 1.5 Flash | ❌ | Model deprecated / returns 404 |
+| **Gemini 2.5 Flash** | ✅ | Free tier, 1,500 req/day, works perfectly |
+
+**Alternative free options if Gemini stops working:**
+- **Groq** — [console.groq.com](https://console.groq.com) — Llama 3, very fast, generous free tier
+- **OpenRouter** — [openrouter.ai](https://openrouter.ai) — aggregates free models
 
 ---
 
 ## 🎨 Google Sites Theme
 
-A matching dark theme was applied to the Google Site:
+A matching dark theme applied to the Google Site to visually connect it with the GitHub Pages site:
 
 | Element | Value |
 |---|---|
@@ -300,7 +360,7 @@ A matching dark theme was applied to the Google Site:
 | Heading font | Lexend Mega |
 | Body font | Lexend Giga |
 
-A custom SVG banner (1600×400px) was created with circuit-board aesthetic matching the GitHub Pages site, for use as the Google Sites header image.
+A custom SVG banner (1600×400px) with circuit-board aesthetic was created for the Google Sites header image.
 
 ---
 
@@ -308,17 +368,22 @@ A custom SVG banner (1600×400px) was created with circuit-board aesthetic match
 
 | Issue | Cause | Fix |
 |---|---|---|
-| Profile photo not showing | Using GitHub blob URL | Use `raw.githubusercontent.com` URL |
-| AI says "Connection error" | API key missing or function not found | Check Netlify env vars and function path |
-| AI says "No response" | Wrong API key or model name | Verify key and model string in `claude.js` |
-| Scholar stats show dashes | `scholar.json` not generated yet | Run GitHub Action manually |
+| Profile photo not showing | Using GitHub blob viewer URL | Use `raw.githubusercontent.com/...` URL instead |
+| AI says "Connection error" | Relative URL used instead of absolute | Change `/.netlify/functions/claude` to full Netlify URL |
+| AI says "Connection error" | Missing OPTIONS preflight handler | Add `if (event.httpMethod === 'OPTIONS')` handler in `claude.js` |
+| AI says "No response" | Wrong Gemini model name | Use `gemini-2.5-flash` not `gemini-2.0-flash` or `gemini-1.5-flash` |
+| AI says "Insufficient Balance" | DeepSeek/paid API ran out of credit | Switch to Gemini free tier |
+| Scholar stats show dashes | `scholar.json` not generated yet | Run GitHub Action manually from Actions tab |
+| Scholar workflow fails | Google blocking scholarly scraper | Script has automatic fallback; exit 0 preserves existing data |
 | Site not updating | Browser cache | Hard refresh: `Ctrl+Shift+R` / `Cmd+Shift+R` |
-| Netlify function 404 | Wrong file path | Must be at `netlify/functions/claude.js` |
-| Gemini quota exceeded | Wrong model name | Use `gemini-2.5-flash` not `gemini-2.0-flash` |
+| Netlify function 404 | Wrong file path or missing `netlify.toml` | Ensure path is `netlify/functions/claude.js` and `netlify.toml` exists |
+| CORS error in browser console | Missing OPTIONS handler or wrong origin | Set `Access-Control-Allow-Origin: *` and handle OPTIONS requests |
+| Google Drive image not loading | CORS policy blocks cross-origin image loads | Host image in GitHub repo and use `raw.githubusercontent.com` URL |
+| Netlify env variable wrong | Typed name instead of API key | Key must start with `sk-` (DeepSeek) or `AIza` (Gemini) |
 
 ---
 
-## 📦 Dependencies
+## 📦 Dependencies & Costs
 
 | Tool | Purpose | Cost |
 |---|---|---|
@@ -329,7 +394,7 @@ A custom SVG banner (1600×400px) was created with circuit-board aesthetic match
 | Google Fonts (Inter) | Typography | Free |
 | GitHub Actions | Daily scholar stats update | Free |
 
-**Total monthly cost: $0**
+**Total monthly cost: $0** 🎉
 
 ---
 
