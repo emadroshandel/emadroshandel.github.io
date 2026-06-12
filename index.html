@@ -260,22 +260,17 @@ async function sendMsg(){
   history.push({role:'user', content: q});
   const typingId = appendTyping();
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model:'claude-sonnet-4-6',
-        max_tokens:1000,
-        system: PROFILE_CONTEXT,
-        messages: history
-      })
+    const res = await fetch('/.netlify/functions/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: history, system: PROFILE_CONTEXT })
     });
     const data = await res.json();
     removeTyping(typingId);
-    const reply = data.content?.[0]?.text || 'Sorry, I could not get a response. Please try again.';
+    const reply = data.reply || 'Sorry, no response received.';
     appendMsg('ai', reply);
-    history.push({role:'assistant', content: reply});
-    if(history.length > 10) history = history.slice(-10);
+    history.push({ role: 'assistant', content: reply });
+    if (history.length > 10) history = history.slice(-10);
   } catch(e) {
     removeTyping(typingId);
     appendMsg('ai', 'Connection error. Please check your internet and try again.');
@@ -378,5 +373,5 @@ document.getElementById('ai-input').addEventListener('keydown', e=>{if(e.key==='
   });
 })();
 </script>
-</body>
-</html>
+
+
