@@ -1,14 +1,24 @@
 exports.handler = async function(event) {
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
+
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Content-Type': 'application/json'
+  };
+
+  // Handle preflight OPTIONS request from browser
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 200, headers, body: '' };
   }
 
-  const corsOrigin = '*';
+  if (event.httpMethod !== 'POST') {
+    return { statusCode: 405, headers, body: 'Method Not Allowed' };
+  }
 
   try {
     const { messages, system } = JSON.parse(event.body);
 
-    // Convert chat history to Gemini format
     const geminiMessages = messages.map(m => ({
       role: m.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: m.content }]
@@ -31,20 +41,12 @@ exports.handler = async function(event) {
     const reply = data.candidates?.[0]?.content?.parts?.[0]?.text
       || `No response. Gemini said: ${JSON.stringify(data.error || data)}`;
 
-    return {
-      statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': corsOrigin,
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ reply })
-    };
+    return { statusCode: 200, headers, body: JSON.stringify({ reply }) };
 
   } catch (err) {
     return {
       statusCode: 500,
-      headers: { 'Access-Control-Allow-Origin': corsOrigin },
+      headers,
       body: JSON.stringify({ reply: `Server error: ${err.message}` })
     };
   }
