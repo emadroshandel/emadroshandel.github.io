@@ -260,7 +260,7 @@ async function sendMsg(){
   history.push({role:'user', content: q});
   const typingId = appendTyping();
   try {
-    const res = await fetch('/.netlify/functions/claude', {
+    const res = await fetch('https://bright-donut-72d55d.netlify.app/.netlify/functions/claude', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ messages: history, system: PROFILE_CONTEXT })
