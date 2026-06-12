@@ -3,12 +3,7 @@ exports.handler = async function(event) {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
-  const allowedOrigins = [
-    'https://emadroshandel.github.io',
-    'https://bright-donut-72d55d.netlify.app'
-  ];
-  const origin = event.headers.origin || '';
-  const corsOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[1];
+  const corsOrigin = '*';
 
   try {
     const { messages, system } = JSON.parse(event.body);
