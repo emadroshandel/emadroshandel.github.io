@@ -30,7 +30,8 @@ exports.handler = async function(event) {
     });
 
     const data = await response.json();
-    const reply = data.choices?.[0]?.message?.content || 'Sorry, I could not get a response.';
+    const reply = data.choices?.[0]?.message?.content || 
+      `No response. DeepSeek said: ${JSON.stringify(data.error || data)}`;
 
     return {
       statusCode: 200,
