@@ -32,7 +32,7 @@ exports.handler = async function(event) {
         body: JSON.stringify({
           system_instruction: { parts: [{ text: system }] },
           contents: geminiMessages,
-          generationConfig: { maxOutputTokens: 300, temperature: 0.7 }
+          generationConfig: { maxOutputTokens: 600, temperature: 0.7 }
         })
       }
     );
