@@ -1,7 +1,7 @@
 name: Update Scholar Stats
 on:
   schedule:
-    - cron: '0 6 * * *'  # runs daily at 6am
+    - cron: '0 6 * * *'
   workflow_dispatch:
 
 jobs:
@@ -9,11 +9,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
       - uses: actions/setup-python@v4
         with:
           python-version: '3.x'
-      - run: pip install scholarly
-      - run: python scholar.py
-      - uses: stefanzweifel/git-auto-commit-action@v5
+
+      - name: Install dependencies
+        run: pip install scholarly requests fp
+
+      - name: Run scholar script
+        run: python scholar.py
+        timeout-minutes: 10
+
+      - name: Commit updated scholar.json
+        uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Auto-update scholar stats"
