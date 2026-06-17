@@ -5,6 +5,7 @@ import requests
 SERPAPI_KEY = os.environ.get('SERPAPI_KEY')
 AUTHOR_ID = 'd1Wqu9wAAAAJ'
 
+
 def fetch_with_serpapi():
     """Fetch citation data via SerpApi's Google Scholar Author endpoint."""
     url = "https://serpapi.com/search"
@@ -24,36 +25,41 @@ def fetch_with_serpapi():
     table = result.get("cited_by", {}).get("table", [])
     graph = result.get("cited_by", {}).get("graph", [])
 
-    def get_all(index, key):
-        try:
-            return table[index][key]["all"]
-        except (IndexError, KeyError, TypeError):
-            return 0
+    # table is a list of single-key dicts, e.g.:
+    # [ {"citations": {"all": 535, "since_2021": 478}},
+    #   {"h_index":   {"all": 12,  "since_2021": 11}},
+    #   {"i10_index": {"all": 13,  "since_2021": 11}} ]
+    # Build a flat lookup keyed by stat name instead of relying on index order.
+    stats = {}
+    for entry in table:
+        for key, val in entry.items():
+            stats[key] = val
 
-    def get_since(index, key):
-        try:
-            return table[index][key]["since_2021"]
-        except (IndexError, KeyError, TypeError):
-            return 0
+    def get_all(key):
+        return stats.get(key, {}).get("all", 0)
+
+    def get_since(key):
+        return stats.get(key, {}).get("since_2021", 0)
 
     data = {
-        "citations":       get_all(0, "citations"),
-        "citations_since": get_since(0, "citations"),
-        "h_index":         get_all(1, "h_index"),
-        "h_index_since":   get_since(1, "h_index"),
-        "i10_index":       get_all(2, "i10_index"),
-        "i10_index_since": get_since(2, "i10_index"),
+        "citations":       get_all("citations"),
+        "citations_since": get_since("citations"),
+        "h_index":         get_all("h_index"),
+        "h_index_since":   get_since("h_index"),
+        "i10_index":       get_all("i10_index"),
+        "i10_index_since": get_since("i10_index"),
         "yearly": {str(point["year"]): point["citations"] for point in graph}
     }
 
     return data
+
 
 # ── Main ──
 print("Fetching citation data via SerpApi...")
 
 try:
     data = fetch_with_serpapi()
-    print(f"SerpApi succeeded: {data['citations']} citations, h-index {data['h_index']}")
+    print(f"SerpApi succeeded: {data['citations']} citations, h-index {data['h_index']}, i10-index {data['i10_index']}")
 
     with open('scholar.json', 'w') as f:
         json.dump(data, f, indent=2)
