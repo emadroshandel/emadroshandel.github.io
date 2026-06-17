@@ -24,19 +24,25 @@ def fetch_with_serpapi():
     table = result.get("cited_by", {}).get("table", [])
     graph = result.get("cited_by", {}).get("graph", [])
 
-    def get_stat(index, key):
+    def get_all(index, key):
         try:
-            return table[index][key]["value"]
+            return table[index][key]["all"]
+        except (IndexError, KeyError, TypeError):
+            return 0
+
+    def get_since(index, key):
+        try:
+            return table[index][key]["since_2021"]
         except (IndexError, KeyError, TypeError):
             return 0
 
     data = {
-        "citations":       get_stat(0, "citations"),
-        "citations_since": get_stat(0, "citations") if len(table) <= 0 else table[0].get("citations", {}).get("since_2021", 0),
-        "h_index":         get_stat(1, "h_index"),
-        "h_index_since":   table[1].get("h_index", {}).get("since_2021", 0) if len(table) > 1 else 0,
-        "i10_index":       get_stat(2, "i10_index"),
-        "i10_index_since": table[2].get("i10_index", {}).get("since_2021", 0) if len(table) > 2 else 0,
+        "citations":       get_all(0, "citations"),
+        "citations_since": get_since(0, "citations"),
+        "h_index":         get_all(1, "h_index"),
+        "h_index_since":   get_since(1, "h_index"),
+        "i10_index":       get_all(2, "i10_index"),
+        "i10_index_since": get_since(2, "i10_index"),
         "yearly": {str(point["year"]): point["citations"] for point in graph}
     }
 
