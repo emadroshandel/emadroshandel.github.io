@@ -1,4 +1,4 @@
-# Emad Roshandel — Personal Portfolio Website
+# Emad Roshandel — Personal Academic Portfolio Website
 
 A fully animated, AI-powered personal academic portfolio hosted on GitHub Pages with a Netlify serverless backend. This README documents the complete build process, architecture, code structure, and all lessons learned during development.
 
@@ -202,33 +202,50 @@ Tells Netlify where to find the serverless functions:
 
 ### 4. `scholar.py`
 
-Python script run by GitHub Actions to scrape Google Scholar and update `scholar.json`. Uses two methods with automatic fallback:
+Python script run by GitHub Actions to fetch citation data via **SerpApi's Google Scholar Author API** (after `scholarly` and direct scraping both proved unreliable — see lessons below):
 
-**Method 1 — scholarly with free proxies:**
 ```python
-from scholarly import scholarly, ProxyGenerator
-pg = ProxyGenerator()
-pg.FreeProxies()
-scholarly.use_proxy(pg)
-author = scholarly.search_author_id('d1Wqu9wAAAAJ')
-author = scholarly.fill(author, sections=['basics', 'indices', 'counts'])
+def fetch_with_serpapi():
+    """Fetch citation data via SerpApi's Google Scholar Author endpoint."""
+    url = "https://serpapi.com/search"
+    params = {
+        "engine": "google_scholar_author",
+        "author_id": "d1Wqu9wAAAAJ",
+        "api_key": SERPAPI_KEY
+    }
+    resp = requests.get(url, params=params, timeout=30)
+    result = resp.json()
+
+    # SerpApi returns "table" as a list of single-key dicts:
+    # [ {"citations": {"all": 535, "since_2021": 478}},
+    #   {"h_index":   {"all": 12,  "since_2021": 11}},
+    #   {"i10_index": {"all": 13,  "since_2021": 11}} ]
+    # Build a flat lookup keyed by stat name rather than relying on index order —
+    # this is more robust if SerpApi changes the order or omits an entry.
+    table = result.get("cited_by", {}).get("table", [])
+    stats = {}
+    for entry in table:
+        for key, val in entry.items():
+            stats[key] = val
+
+    def get_all(key):   return stats.get(key, {}).get("all", 0)
+    def get_since(key): return stats.get(key, {}).get("since_2021", 0)
+
+    data = {
+        "citations":       get_all("citations"),
+        "citations_since": get_since("citations"),
+        "h_index":         get_all("h_index"),
+        "h_index_since":   get_since("h_index"),
+        "i10_index":       get_all("i10_index"),
+        "i10_index_since": get_since("i10_index"),
+        "yearly": {str(p["year"]): p["citations"] for p in result["cited_by"]["graph"]}
+    }
+    return data
 ```
 
-**Method 2 — direct scrape fallback:**
-```python
-# Randomised User-Agent headers to avoid bot detection
-# Parses citation stats and yearly bar chart from HTML
-# Polite random delay (2-5 seconds) before request
-```
+**Graceful failure:** if SerpApi fails for any reason, the script exits with code `0` and leaves the existing `scholar.json` untouched, so the live site is never broken by a failed fetch.
 
-**Graceful failure:**
-```python
-# If both methods fail, exits with code 0
-# This keeps the workflow green and preserves existing scholar.json
-# Never overwrites good data with empty/failed data
-```
-
-> ⚠️ **scholarly lesson:** Google actively blocks automated requests. Free proxies are required. Even with proxies, the workflow may occasionally fail — the graceful exit with code 0 prevents false alarm failure emails.
+> ⚠️ **Parsing lesson:** Don't assume API response structures from memory or guesswork — always fetch one real raw response and inspect it directly before writing parsing code. An earlier version assumed a `"value"` wrapper key that didn't exist, and a later version assumed fixed table index positions matched fixed stat names, which happened to work but was fragile. Building a name-keyed lookup dict is more robust than positional indexing for list-of-single-key-dict API shapes.
 
 ---
 
@@ -241,7 +258,7 @@ name: Update Scholar Stats
 on:
   schedule:
     - cron: '0 6 * * *'
-  workflow_dispatch:        # can also be triggered manually
+  workflow_dispatch:        # allows manual triggering from the Actions tab
 
 jobs:
   update:
@@ -252,19 +269,30 @@ jobs:
         with:
           python-version: '3.x'
       - name: Install dependencies
-        run: pip install scholarly requests fp
+        run: pip install requests
       - name: Run scholar script
         run: python scholar.py
         timeout-minutes: 10
-      - uses: stefanzweifel/git-auto-commit-action@v5
+        env:
+          SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
+      - name: Commit updated scholar.json
+        uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Auto-update scholar stats"
+          push_options: '--force'
+          skip_fetch: true
 ```
 
+**Key settings explained:**
+- `push_options: '--force'` — overwrites remote history for this auto-generated file; safe here since nothing else should be editing `scholar.json` concurrently
+- `skip_fetch: true` — skips the action's internal `git fetch`/divergence check entirely, avoiding "non-fast-forward" rejections caused by the repo having moved on (e.g. from GitHub Pages deploy commits) since the job's checkout
+
 **To trigger manually:**
-1. Go to GitHub repo → Actions tab
-2. Click **Update Scholar Stats**
-3. Click **Run workflow**
+1. Go to GitHub repo → **Actions** tab
+2. Click **"Update Scholar Stats"** in the left sidebar (not "All workflows")
+3. Click **"Run workflow"** (creates a fresh run using the current file on `main`)
+
+> ⚠️ **Critical lesson — "Re-run jobs" vs "Run workflow":** These are NOT the same thing. **"Re-run jobs"** on an existing run replays that run's *frozen snapshot* of the workflow file from whatever commit it originally used — it will NOT pick up any subsequent edits to the `.yml` file, even if they were committed. **"Run workflow"** (found by clicking the specific workflow name in the sidebar, not "All workflows") creates a brand new run that reads the current file on the branch. If your fixes don't seem to take effect no matter what you change, check whether you've been clicking "Re-run jobs" on a stale run — this cost significant debugging time in this project.
 
 ---
 
@@ -276,7 +304,22 @@ jobs:
 |---|---|---|
 | `GEMINI_API_KEY` | `AIza...` | Google Gemini API key, marked as secret |
 
-> ⚠️ **Lesson learned:** When adding the variable, tick **"Contains secret values"** and use **"Same value for all deploy contexts"** — do not use "Different value for each deploy context" as that creates separate values per environment which is confusing and error-prone.
+### GitHub Actions (Settings → Secrets and variables → Actions)
+
+| Key | Value | Notes |
+|---|---|---|
+| `SERPAPI_KEY` | `sk-...` | SerpApi key for Google Scholar Author endpoint |
+
+> ⚠️ **Lesson learned:** When adding environment variables, tick **"Contains secret values"** and use **"Same value for all deploy contexts"** — do not use "Different value for each deploy context" as that creates separate values per environment which is confusing and error-prone. Also double check you're pasting the actual key value, not a placeholder or label — an earlier mistake involved typing descriptive names like "EmadIntro" into the value field instead of the real API key.
+
+### GitHub Actions — Workflow permissions
+For any workflow that commits/pushes changes back to the repo (like `update_scholar.yml`), the repository needs write permission granted:
+1. Repo → **Settings** → **Actions** → **General**
+2. Scroll to **"Workflow permissions"**
+3. Select **"Read and write permissions"**
+4. Click **Save**
+
+Without this, commits succeed locally in the runner but the push is rejected with a `403 Permission denied` error.
 
 ---
 
@@ -297,8 +340,9 @@ jobs:
 - Most credits consumed by code deploys — not by function calls
 - Initial setup phase uses most credits; stable site uses very few
 - AI function calls cost negligible credits (~0.001 per call)
+- When credits run out mid-cycle, Netlify grants 30 grace credits to keep the **live site** serving traffic, but blocks new **production deploys** until the billing cycle resets — already-deployed code keeps working fine, you just can't ship changes to it until renewal
 
-> ⚠️ **Deploy conservation tip:** Before committing, batch all changes into one commit rather than committing file by file. Each commit triggers one Netlify deploy.
+> ⚠️ **Deploy conservation tip:** Before committing, batch all changes into one commit rather than committing file by file. Each commit triggers one Netlify deploy. GitHub Actions / GitHub Pages changes (like `scholar.py` or `index.html`) do NOT consume Netlify credits — only changes that trigger a Netlify build do (primarily `netlify/functions/` and Netlify-specific config). This means scholar-fetching debugging can be iterated on freely without any Netlify cost.
 
 ---
 
@@ -374,12 +418,19 @@ A custom SVG banner (1600×400px) with circuit-board aesthetic was created for t
 | AI says "No response" | Wrong Gemini model name | Use `gemini-2.5-flash` not `gemini-2.0-flash` or `gemini-1.5-flash` |
 | AI says "Insufficient Balance" | DeepSeek/paid API ran out of credit | Switch to Gemini free tier |
 | Scholar stats show dashes | `scholar.json` not generated yet | Run GitHub Action manually from Actions tab |
-| Scholar workflow fails | Google blocking scholarly scraper | Script has automatic fallback; exit 0 preserves existing data |
+| Scholar workflow "succeeds" but data never changes | Script catches errors and exits 0 silently | Check the actual step logs, not just the green checkmark — "success" can mean "failed gracefully and did nothing" |
+| Scholar workflow fails with `scholarly` proxy error | `Client.__init__() got an unexpected keyword argument 'proxies'` — library version mismatch | Abandon `scholarly`; use a dedicated API like SerpApi instead |
+| Scholar workflow fails with `403 Forbidden` | Google Scholar blocks cloud/datacenter IP ranges (GitHub Actions, AWS, etc.) | Use SerpApi or similar service that handles this server-side |
+| Scholar workflow fails to push: `403 ... denied to github-actions[bot]` | Default `GITHUB_TOKEN` lacks write permission | Settings → Actions → General → Workflow permissions → "Read and write permissions" |
+| Scholar workflow fails to push: `non-fast-forward` rejected | Branch diverged between checkout and push (e.g. a Pages deploy committed in between) | Add `skip_fetch: true` and `push_options: '--force'` to the commit action |
+| Scholar stats show 0 for citations/h-index/i10-index but correct "_since" values | Wrong key assumed in API response parsing (e.g. assumed `"value"` key that doesn't exist) | Fetch one real raw API response and inspect actual structure before writing parsing code; prefer name-keyed lookups over positional indexing |
+| Edited code but the fix "didn't work" no matter what | Forgot to click "Commit changes" after editing in GitHub's web editor, or kept re-running an old workflow run | Always verify the live file content on GitHub after editing; use "Run workflow" for a fresh run, not "Re-run jobs" on an old one |
 | Site not updating | Browser cache | Hard refresh: `Ctrl+Shift+R` / `Cmd+Shift+R` |
 | Netlify function 404 | Wrong file path or missing `netlify.toml` | Ensure path is `netlify/functions/claude.js` and `netlify.toml` exists |
 | CORS error in browser console | Missing OPTIONS handler or wrong origin | Set `Access-Control-Allow-Origin: *` and handle OPTIONS requests |
 | Google Drive image not loading | CORS policy blocks cross-origin image loads | Host image in GitHub repo and use `raw.githubusercontent.com` URL |
 | Netlify env variable wrong | Typed name instead of API key | Key must start with `sk-` (DeepSeek) or `AIza` (Gemini) |
+| Netlify "production deploys paused" email | Monthly build credit allowance (300) exhausted | Live site keeps working via 30 grace credits; just avoid further Netlify-triggering commits until billing cycle resets |
 
 ---
 
@@ -390,7 +441,7 @@ A custom SVG banner (1600×400px) with circuit-board aesthetic was created for t
 | GitHub Pages | Static site hosting | Free |
 | Netlify | Serverless function proxy | Free (300 credits/month) |
 | Google Gemini API | AI research assistant | Free (1,500 req/day) |
-| scholarly (Python) | Google Scholar scraping | Free |
+| SerpApi | Google Scholar data fetching | Free (100 searches/month, ~30 used) |
 | Google Fonts (Inter) | Typography | Free |
 | GitHub Actions | Daily scholar stats update | Free |
 
@@ -400,10 +451,11 @@ A custom SVG banner (1600×400px) with circuit-board aesthetic was created for t
 
 ## 👤 Author
 
-**Emad Roshandel**
+**Dr. Emad Roshandel** — R&D Lead, Infusion Innovations Pty Ltd · Adelaide, Australia
+
 - 🌐 [emadroshandel.github.io](https://emadroshandel.github.io)
 - 🔬 [Google Scholar](https://scholar.google.com/citations?user=d1Wqu9wAAAAJ)
 - 💼 [LinkedIn](https://www.linkedin.com/in/emad-roshandel-76875a187/)
 - 🔗 [ResearchGate](https://www.researchgate.net/profile/Emad-Roshandel)
 - 🏛️ [Google Site](https://sites.google.com/site/emadroshandel)
-
+- 💻 [GitHub](https://github.com/emadroshandel)
