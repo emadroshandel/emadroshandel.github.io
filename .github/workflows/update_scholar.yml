@@ -23,8 +23,10 @@ jobs:
         env:
           SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
 
+      - name: Pull latest changes
+        run: git pull --rebase origin main
+
       - name: Commit updated scholar.json
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Auto-update scholar stats"
-          pull_strategy: "--rebase"
