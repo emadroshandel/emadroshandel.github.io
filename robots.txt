@@ -1,0 +1,7 @@
+# emadroshandel.github.io - applies to this site and every project site under it
+User-agent: *
+Allow: /
+
+Sitemap: https://emadroshandel.github.io/sitemap.xml
+Sitemap: https://emadroshandel.github.io/Earthing_System/sitemap.xml
+Sitemap: https://emadroshandel.github.io/nfc-spiral-antenna-generator/sitemap.xml
